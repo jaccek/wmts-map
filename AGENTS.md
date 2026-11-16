@@ -38,7 +38,7 @@ Replace the placeholders below with commands verified in this repository:
 
 - Compile shared/Android: `./gradlew :example:assembleDebug`
 - Compile iOS framework: `./gradlew :example:linkDebugFrameworkIosSimulatorArm64`
-- Unit tests: `./gradlew :wmts-map:allTests :example:allTests` (no tests are currently defined)
+- Unit tests: `./gradlew :wmts-map:iosSimulatorArm64Test` (common tests executed on the iOS simulator target; `:example` has no tests)
 - Formatting check: Not configured
 - Static analysis: Not configured
 
