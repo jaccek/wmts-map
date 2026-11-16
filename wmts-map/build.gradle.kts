@@ -20,9 +20,13 @@ kotlin {
 
 android {
     namespace = "com.example.wmtsmap"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 24
+    }
+
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
     }
 }

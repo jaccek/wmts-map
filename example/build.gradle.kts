@@ -22,8 +22,6 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(project(":wmts-map"))
-            implementation(compose.runtime)
-            implementation(compose.foundation)
             implementation(compose.material3)
         }
 
@@ -35,13 +33,17 @@ kotlin {
 
 android {
     namespace = "com.example.wmtsmap.example"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.example.wmtsmap.example"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0"
+    }
+
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
     }
 }
