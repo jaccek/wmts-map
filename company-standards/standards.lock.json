@@ -1,0 +1,26 @@
+{
+  "standardsRepository": "company-ai-engineering-standards",
+  "version": "0.1.0",
+  "profiles": [
+    "kotlin",
+    "compose-multiplatform",
+    "android",
+    "ios",
+    "ktor"
+  ],
+  "standardsGroups": [
+    "compose",
+    "kotlin",
+    "ktor",
+    "multiplatform"
+  ],
+  "skills": [
+    "add-room-migration",
+    "code-review",
+    "create-compose-screen",
+    "implement-coroutines-flow",
+    "implement-feature",
+    "implement-ktor-client",
+    "write-tests"
+  ]
+}
