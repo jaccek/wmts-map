@@ -29,12 +29,20 @@ import androidx.compose.ui.unit.dp
 import com.example.wmtsmap.controller.WmtsMapController
 import com.example.wmtsmap.model.GeoCoordinate
 import com.example.wmtsmap.model.WmtsLayer
-import com.example.wmtsmap.model.WmtsTileMatrixSet
 import com.example.wmtsmap.model.WmtsMapConfig
+import com.example.wmtsmap.model.WmtsTileMatrixSet
 import com.example.wmtsmap.ui.WmtsMap
 
-private const val POLISH_WMTS_CAPABILITIES =
-    "https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMTS/StandardResolution?SERVICE=WMTS&REQUEST=GetCapabilities"
+private const val SAMPLE_WMTS_CAPABILITIES =
+//    "https://maps.wien.gv.at/basemap/1.0.0/WMTSCapabilities.xml"
+//    "https://integracja.gugik.gov.pl/cgi-bin/KrajowaIntegracjaEwidencjiGruntow?Service=WMTS&Request=GetCapabilities"
+//    "https://mapy.geoportal.gov.pl/wss/service/WMTS/guest/wmts/BDOT10k?Service=WMTS&Request=GetCapabilities"
+//    "https://mapy.geoportal.gov.pl/wss/service/WMTS/guest/wmts/BDOT10k-BDOO?Service=WMTS&Request=GetCapabilities"
+    "https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMTS/StandardResolution?Service=WMTS&Request=GetCapabilities"
+
+private const val SAMPLE_LAYER = "ORTOFOTOMAPA"//"geolandbasemap"
+private const val SAMPLE_MATRIX_SET = "EPSG:2180"//"google3857"
+private val SAMPLE_POSITION = GeoCoordinate(latitude = 48.2082, longitude = 16.3738)
 
 @Composable
 fun App() {
@@ -47,12 +55,12 @@ fun App() {
 
 @Composable
 private fun WmtsMapExample() {
-    var serviceUrl by remember { mutableStateOf(POLISH_WMTS_CAPABILITIES) }
-    var activeUrl by remember { mutableStateOf(POLISH_WMTS_CAPABILITIES) }
+    var serviceUrl by remember { mutableStateOf(SAMPLE_WMTS_CAPABILITIES) }
+    var activeUrl by remember { mutableStateOf(SAMPLE_WMTS_CAPABILITIES) }
     var mapController by remember { mutableStateOf<WmtsMapController?>(null) }
-    var latitude by remember { mutableStateOf("51.1") }
-    var longitude by remember { mutableStateOf("17.0") }
-    var position by remember { mutableStateOf(GeoCoordinate(51.1, 17.0)) }
+    var latitude by remember { mutableStateOf(SAMPLE_POSITION.latitude.toString()) }
+    var longitude by remember { mutableStateOf(SAMPLE_POSITION.longitude.toString()) }
+    var position by remember { mutableStateOf(SAMPLE_POSITION) }
     var zoom by remember { mutableStateOf(5.0) }
     var layerIdentifier by remember { mutableStateOf<String?>(null) }
     var matrixSetIdentifier by remember { mutableStateOf<String?>(null) }
@@ -110,8 +118,10 @@ private fun WmtsMapExample() {
         WmtsMap(
             config = WmtsMapConfig(
                 capabilitiesUrl = activeUrl,
-                initialPosition = GeoCoordinate(51.1, 17.0),
-                initialZoom = 5.0,
+                layer = SAMPLE_LAYER.takeIf { activeUrl == SAMPLE_WMTS_CAPABILITIES },
+                tileMatrixSet = SAMPLE_MATRIX_SET.takeIf { activeUrl == SAMPLE_WMTS_CAPABILITIES },
+                initialPosition = position,
+                initialZoom = zoom,
             ),
             modifier = Modifier.fillMaxWidth().height(340.dp),
             onMapReady = { mapController = it },

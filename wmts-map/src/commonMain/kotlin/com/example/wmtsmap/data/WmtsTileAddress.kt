@@ -22,10 +22,14 @@ object WmtsTileAddress {
         style: String,
         format: String,
     ): String {
-        val restTemplate = layer.resourceUrls.firstOrNull {
+        val restTemplates = layer.resourceUrls.filter {
             it.resourceType.equals("tile", ignoreCase = true) &&
                 (it.format == null || it.format == format)
-        }?.template
+        }
+        val capabilitiesHost = URLBuilder().apply { takeFrom(capabilitiesUrl) }.host
+        val restTemplate = restTemplates.firstOrNull { resource ->
+            URLBuilder().apply { takeFrom(resource.template) }.host.equals(capabilitiesHost, ignoreCase = true)
+        }?.template ?: restTemplates.firstOrNull()?.template
 
         if (restTemplate != null) {
             val values = mapOf(

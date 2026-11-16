@@ -65,7 +65,12 @@ class KtorWmtsRepository(
         } catch (exception: HttpRequestTimeoutException) {
             throw WmtsMapException(WmtsMapError.Network("The WMTS request timed out."), exception)
         } catch (exception: Exception) {
-            throw WmtsMapException(WmtsMapError.Network("Unable to load WMTS capabilities."), exception)
+            val message = if (exception.hasTlsCertificateFailure()) {
+                "The WMTS server's TLS certificate could not be verified."
+            } else {
+                "Unable to load WMTS capabilities."
+            }
+            throw WmtsMapException(WmtsMapError.Network(message), exception)
         }
     }
 
@@ -126,8 +131,33 @@ class KtorWmtsRepository(
         } catch (exception: HttpRequestTimeoutException) {
             throw WmtsMapException(WmtsMapError.Network("The WMTS tile request timed out."), exception)
         } catch (exception: Exception) {
-            throw WmtsMapException(WmtsMapError.Network("Unable to load a WMTS tile."), exception)
+            val message = if (exception.hasTlsCertificateFailure()) {
+                "The WMTS server's TLS certificate could not be verified."
+            } else {
+                "Unable to load a WMTS tile."
+            }
+            throw WmtsMapException(WmtsMapError.Network(message), exception)
         }
+    }
+
+    private fun Throwable.hasTlsCertificateFailure(): Boolean {
+        var current: Throwable? = this
+        while (current != null) {
+            val typeName = current::class.simpleName.orEmpty()
+            val message = current.message.orEmpty()
+            if (
+                typeName.contains("SSLHandshakeException") ||
+                typeName.contains("CertificateException") ||
+                typeName.contains("CertPath") ||
+                message.contains("PKIX path building failed", ignoreCase = true) ||
+                message.contains("trust anchor for certification path", ignoreCase = true) ||
+                message.contains("unable to find valid certification path", ignoreCase = true)
+            ) {
+                return true
+            }
+            current = current.cause
+        }
+        return false
     }
 
     private fun io.ktor.client.HttpClientConfig<*>.configureClient() {

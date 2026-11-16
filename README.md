@@ -109,8 +109,9 @@ and a typed error. It can be collected in Compose with `collectAsState()`.
 
 Ktor handles HTTP GET requests. Non-2xx responses become `HttpStatus` errors;
 timeouts and transport failures become `Network` errors; malformed or
-unsupported capabilities become `InvalidCapabilities` errors. Coroutine
-cancellation is propagated.
+unsupported capabilities become `InvalidCapabilities` errors. TLS certificate
+validation failures are reported explicitly and certificate checks are never
+disabled. Coroutine cancellation is propagated.
 
 The map uses a bounded in-memory LRU cache by default. `KtorWmtsRepository`
 accepts a custom `WmtsTileCache` implementation and exposes cache invalidation;
@@ -121,11 +122,10 @@ WMTS service.
 ## Example application
 
 Run `./gradlew :example:assembleDebug` to build the Android example. Its initial
-URL is a Polish Geoportal orthophoto WMTS capabilities endpoint; network/service
-availability is not assumed. Enter another capabilities URL and tap **Load**
-to try another service. The UI offers layer and compatible matrix-set cycling,
-map zoom controls, WGS 84 centering, coordinates, zoom, formats, and CRS
-metadata.
+URL is the Vienna basemap WMTS capabilities endpoint, with the `geolandbasemap`
+layer selected. Enter another capabilities URL and tap **Load** to try another
+service. The UI offers layer and compatible matrix-set cycling, map zoom
+controls, WGS 84 centering, coordinates, zoom, formats, and CRS metadata.
 
 The iOS framework build command is
 `./gradlew :example:linkDebugFrameworkIosSimulatorArm64`.

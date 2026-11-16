@@ -38,6 +38,38 @@ class WmtsTileAddressTest {
     }
 
     @Test
+    fun `prefers a REST tile template on the capabilities host`() {
+        val url = WmtsTileAddress.resolve(
+            capabilitiesUrl = "https://maps.wien.gv.at/basemap/1.0.0/WMTSCapabilities.xml",
+            capabilities = capabilities,
+            layer = layer.copy(
+                resourceUrls = listOf(
+                    WmtsResourceUrl(
+                        template = "https://maps1.wien.gv.at/basemap/{Layer}/{Style}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.png",
+                        resourceType = "tile",
+                        format = "image/png",
+                    ),
+                    WmtsResourceUrl(
+                        template = "https://maps.wien.gv.at/basemap/{Layer}/{Style}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.png",
+                        resourceType = "tile",
+                        format = "image/png",
+                    ),
+                ),
+            ),
+            matrixSet = matrixSet,
+            matrixIdentifier = "5",
+            tile = WmtsTileCoordinate(17, 11),
+            style = "default",
+            format = "image/png",
+        )
+
+        assertEquals(
+            "https://maps.wien.gv.at/basemap/base/default/world/5/11/17.png",
+            url,
+        )
+    }
+
+    @Test
     fun `resolves KVP parameters and refuses ambiguous selection`() {
         val url = WmtsTileAddress.resolve(
             capabilitiesUrl = "https://example.test/wmts",

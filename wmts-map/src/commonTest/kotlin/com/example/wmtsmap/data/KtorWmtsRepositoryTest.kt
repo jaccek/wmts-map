@@ -93,6 +93,28 @@ class KtorWmtsRepositoryTest {
         }
     }
 
+    @Test
+    fun `reports TLS certificate validation failures clearly`() = runTest {
+        val repository = KtorWmtsRepository(
+            config = WmtsMapConfig("https://example.test/wmts"),
+            engine = MockEngine {
+                throw IllegalStateException("PKIX path building failed")
+            },
+        )
+
+        try {
+            val exception = assertFailsWith<WmtsMapException> {
+                repository.loadCapabilities()
+            }
+            assertEquals(
+                "The WMTS server's TLS certificate could not be verified.",
+                exception.error.message,
+            )
+        } finally {
+            repository.close()
+        }
+    }
+
     private companion object {
         val CAPABILITIES_XML = """
             <Capabilities version="1.0.0">
