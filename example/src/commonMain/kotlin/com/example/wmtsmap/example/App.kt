@@ -40,10 +40,6 @@ private const val SAMPLE_WMTS_CAPABILITIES =
 //    "https://mapy.geoportal.gov.pl/wss/service/WMTS/guest/wmts/BDOT10k-BDOO?Service=WMTS&Request=GetCapabilities"
     "https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMTS/StandardResolution?Service=WMTS&Request=GetCapabilities"
 
-private const val SAMPLE_LAYER = "ORTOFOTOMAPA"//"geolandbasemap"
-private const val SAMPLE_MATRIX_SET = "EPSG:2180"//"google3857"
-private val SAMPLE_POSITION = GeoCoordinate(latitude = 48.2082, longitude = 16.3738)
-
 @Composable
 fun App() {
     MaterialTheme {
@@ -58,9 +54,8 @@ private fun WmtsMapExample() {
     var serviceUrl by remember { mutableStateOf(SAMPLE_WMTS_CAPABILITIES) }
     var activeUrl by remember { mutableStateOf(SAMPLE_WMTS_CAPABILITIES) }
     var mapController by remember { mutableStateOf<WmtsMapController?>(null) }
-    var latitude by remember { mutableStateOf(SAMPLE_POSITION.latitude.toString()) }
-    var longitude by remember { mutableStateOf(SAMPLE_POSITION.longitude.toString()) }
-    var position by remember { mutableStateOf(SAMPLE_POSITION) }
+    var latitude by remember { mutableStateOf("") }
+    var longitude by remember { mutableStateOf("") }
     var zoom by remember { mutableStateOf(5.0) }
     var layerIdentifier by remember { mutableStateOf<String?>(null) }
     var matrixSetIdentifier by remember { mutableStateOf<String?>(null) }
@@ -79,7 +74,6 @@ private fun WmtsMapExample() {
 
     LaunchedEffect(mapController) {
         mapController?.state?.collect { state ->
-            position = state.position
             zoom = state.zoom
             layerIdentifier = state.selectedLayer ?: layerIdentifier
             matrixSetIdentifier = state.selectedTileMatrixSet ?: matrixSetIdentifier
@@ -105,6 +99,8 @@ private fun WmtsMapExample() {
                 onClick = {
                     activeUrl = serviceUrl
                     mapController = null
+                    latitude = ""
+                    longitude = ""
                     layerIdentifier = null
                     matrixSetIdentifier = null
                     errorMessage = null
@@ -118,13 +114,16 @@ private fun WmtsMapExample() {
         WmtsMap(
             config = WmtsMapConfig(
                 capabilitiesUrl = activeUrl,
-                layer = SAMPLE_LAYER.takeIf { activeUrl == SAMPLE_WMTS_CAPABILITIES },
-                tileMatrixSet = SAMPLE_MATRIX_SET.takeIf { activeUrl == SAMPLE_WMTS_CAPABILITIES },
-                initialPosition = position,
                 initialZoom = zoom,
             ),
             modifier = Modifier.fillMaxWidth().height(340.dp),
-            onMapReady = { mapController = it },
+            onMapReady = { controller ->
+                mapController = controller
+                controller.state.value.position.let { currentPosition ->
+                    latitude = currentPosition.latitude.toString()
+                    longitude = currentPosition.longitude.toString()
+                }
+            },
             onMapError = { errorMessage = it.message },
         )
 
@@ -197,10 +196,12 @@ private fun WmtsMapExample() {
             }
         }
 
-        Text(
-            "WGS84 ${position.latitude}, ${position.longitude}  |  Zoom $zoom",
-            style = MaterialTheme.typography.bodyMedium,
-        )
+        mapState?.value?.takeIf { it.capabilities != null }?.position?.let { currentPosition ->
+            Text(
+                "WGS84 ${currentPosition.latitude}, ${currentPosition.longitude}  |  Zoom $zoom",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
 
         capabilities?.let {
             Text(

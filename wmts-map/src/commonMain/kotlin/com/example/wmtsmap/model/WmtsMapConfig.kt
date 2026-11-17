@@ -1,12 +1,17 @@
 package com.example.wmtsmap.model
 
-/** Immutable options for loading and displaying a WMTS layer. */
+/**
+ * Immutable options for loading and displaying a WMTS layer.
+ *
+ * When layer, tile matrix set, or initial position is omitted, the map derives each default
+ * from the first compatible capabilities entry.
+ */
 data class WmtsMapConfig(
     val capabilitiesUrl: String,
     val layer: String? = null,
     val style: String? = null,
     val tileMatrixSet: String? = null,
-    val initialPosition: GeoCoordinate = GeoCoordinate(latitude = 0.0, longitude = 0.0),
+    val initialPosition: GeoCoordinate? = null,
     val initialZoom: Double = 0.0,
     val minZoom: Double? = null,
     val maxZoom: Double? = null,
@@ -19,8 +24,10 @@ data class WmtsMapConfig(
 ) {
     init {
         require(capabilitiesUrl.isNotBlank())
-        require(initialPosition.latitude in -90.0..90.0)
-        require(initialPosition.longitude in -180.0..180.0)
+        initialPosition?.let {
+            require(it.latitude in -90.0..90.0)
+            require(it.longitude in -180.0..180.0)
+        }
         require(initialZoom.isFinite())
         require(connectTimeoutMillis > 0L)
         require(requestTimeoutMillis > 0L)

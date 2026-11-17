@@ -39,7 +39,7 @@ internal class WmtsMapControllerImpl(
             capabilities = null,
             selectedLayer = config.layer,
             selectedTileMatrixSet = config.tileMatrixSet,
-            position = config.initialPosition,
+            position = config.initialPosition ?: GeoCoordinate(0.0, 0.0),
             zoom = config.initialZoom,
             tiles = emptyList(),
             error = null,
@@ -48,6 +48,7 @@ internal class WmtsMapControllerImpl(
     override val state: StateFlow<WmtsMapState> = mutableState.asStateFlow()
     private var selectedLayer: WmtsLayer? = null
     private var selectedMatrixSet: WmtsTileMatrixSet? = null
+    private var hasResolvedInitialPosition = config.initialPosition != null
     private var tileJob: Job? = null
 
     fun initialize() {
@@ -59,28 +60,23 @@ internal class WmtsMapControllerImpl(
             mutableState.value = mutableState.value.copy(isLoading = true, error = null)
             try {
                 val capabilities = repository.loadCapabilities()
-                val layer = config.layer?.let { WmtsTileAddress.selectLayer(capabilities, it) }
-                    ?: capabilities.layers.singleOrNull()
-                val matrixSet = layer?.let { selectedLayer ->
-                    config.tileMatrixSet?.let { identifier ->
-                        WmtsTileAddress.selectMatrixSet(capabilities, selectedLayer, identifier)
-                    } ?: run {
-                        val compatible = capabilities.tileMatrixSets.filter {
-                            it.identifier in selectedLayer.tileMatrixSetLinks
-                        }.ifEmpty { capabilities.tileMatrixSets }
-                        compatible.singleOrNull()
-                    }
-                }
-                if (layer != null) selectStyle(layer, config.style)
+                val layer = WmtsTileAddress.selectLayer(capabilities, config.layer)
+                val matrixSet = WmtsTileAddress.selectMatrixSet(capabilities, layer, config.tileMatrixSet)
+                selectStyle(layer, config.style)
                 selectedLayer = layer
                 selectedMatrixSet = matrixSet
-                val zoom = matrixSet?.let { clampZoom(mutableState.value.zoom, it) } ?: mutableState.value.zoom
+                val position = if (hasResolvedInitialPosition) {
+                    mutableState.value.position
+                } else {
+                    WmtsTileCalculator.coverageCenter(matrixSet).also { hasResolvedInitialPosition = true }
+                }
                 mutableState.value = mutableState.value.copy(
                     isLoading = false,
                     capabilities = capabilities,
-                    selectedLayer = layer?.identifier,
-                    selectedTileMatrixSet = matrixSet?.identifier,
-                    zoom = zoom,
+                    selectedLayer = layer.identifier,
+                    selectedTileMatrixSet = matrixSet.identifier,
+                    position = position,
+                    zoom = clampZoom(mutableState.value.zoom, matrixSet),
                     error = null,
                 )
             } catch (exception: CancellationException) {
@@ -99,6 +95,7 @@ internal class WmtsMapControllerImpl(
     override fun moveTo(coordinate: GeoCoordinate, zoom: Double?) {
         require(coordinate.latitude in -90.0..90.0)
         require(coordinate.longitude in -180.0..180.0)
+        hasResolvedInitialPosition = true
         val current = mutableState.value
         mutableState.value = current.copy(
             position = coordinate,
@@ -128,21 +125,14 @@ internal class WmtsMapControllerImpl(
             return
         }
         try {
-            val matrixSet = config.tileMatrixSet?.let {
-                WmtsTileAddress.selectMatrixSet(capabilities, layer, it)
-            } ?: run {
-                val compatible = capabilities.tileMatrixSets.filter {
-                    it.identifier in layer.tileMatrixSetLinks
-                }.ifEmpty { capabilities.tileMatrixSets }
-                compatible.singleOrNull()
-            }
+            val matrixSet = WmtsTileAddress.selectMatrixSet(capabilities, layer, config.tileMatrixSet)
             selectStyle(layer, null)
             selectedLayer = layer
             selectedMatrixSet = matrixSet
             mutableState.value = mutableState.value.copy(
                 selectedLayer = layer.identifier,
-                selectedTileMatrixSet = matrixSet?.identifier,
-                zoom = matrixSet?.let { clampZoom(mutableState.value.zoom, it) } ?: mutableState.value.zoom,
+                selectedTileMatrixSet = matrixSet.identifier,
+                zoom = clampZoom(mutableState.value.zoom, matrixSet),
                 tiles = emptyList(),
                 error = null,
             )

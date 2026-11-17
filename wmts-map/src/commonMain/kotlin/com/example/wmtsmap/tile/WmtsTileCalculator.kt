@@ -1,6 +1,7 @@
 package com.example.wmtsmap.tile
 
 import com.example.wmtsmap.model.ProjectedCoordinate
+import com.example.wmtsmap.model.GeoCoordinate
 import com.example.wmtsmap.model.WmtsTileMatrix
 import com.example.wmtsmap.model.WmtsTileMatrixSet
 import com.example.wmtsmap.projection.WmtsProjection
@@ -22,6 +23,20 @@ data class WmtsTileBounds(
 /** Metadata-driven tile grid calculations for a WMTS matrix set. */
 object WmtsTileCalculator {
     private const val OGC_PIXEL_SIZE_METERS = 0.00028
+
+    /** Returns the WGS 84 center of the first matrix's advertised coverage extent. */
+    fun coverageCenter(matrixSet: WmtsTileMatrixSet): GeoCoordinate {
+        val matrix = matrixSet.tileMatrices.firstOrNull()
+            ?: throw IllegalArgumentException("The tile matrix set must contain a tile matrix.")
+        val crs = matrixSet.supportedCrs
+        val resolution = resolution(matrix, crs)
+        val topLeft = WmtsProjection.normalizeTopLeftCorner(matrix.topLeftCorner, crs)
+        val center = ProjectedCoordinate(
+            easting = topLeft.easting + matrix.matrixWidth.toDouble() * matrix.tileWidth * resolution / 2.0,
+            northing = topLeft.northing - matrix.matrixHeight.toDouble() * matrix.tileHeight * resolution / 2.0,
+        )
+        return WmtsProjection.inverse(center, crs)
+    }
 
     /** Returns the projected units per pixel for [matrix]. */
     fun resolution(matrix: WmtsTileMatrix, crs: String): Double =

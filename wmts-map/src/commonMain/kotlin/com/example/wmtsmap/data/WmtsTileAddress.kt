@@ -63,16 +63,16 @@ object WmtsTileAddress {
         return urlBuilder.buildString()
     }
 
-    /** Resolves an explicitly selected layer or reports ambiguity. */
+    /** Resolves the named layer, or the first capabilities layer when [identifier] is null. */
     fun selectLayer(capabilities: WmtsCapabilities, identifier: String?): WmtsLayer {
         val selected = identifier?.let { id -> capabilities.layers.firstOrNull { it.identifier == id } }
         if (selected != null) return selected
         if (identifier != null) invalid("WMTS layer '$identifier' was not found.")
-        return capabilities.layers.singleOrNull()
-            ?: invalid("Select one of the ${capabilities.layers.size} available WMTS layers.")
+        return capabilities.layers.firstOrNull()
+            ?: invalid("The capabilities document contains no WMTS layers.")
     }
 
-    /** Resolves an explicitly selected matrix set or reports ambiguity. */
+    /** Resolves the named compatible matrix set, or the first available one when [identifier] is null. */
     fun selectMatrixSet(
         capabilities: WmtsCapabilities,
         layer: WmtsLayer,
@@ -85,8 +85,8 @@ object WmtsTileAddress {
         val selected = identifier?.let { id -> candidates.firstOrNull { it.identifier == id } }
         if (selected != null) return selected
         if (identifier != null) invalid("Tile matrix set '$identifier' is not available for layer '${layer.identifier}'.")
-        return candidates.singleOrNull()
-            ?: invalid("Select one of the ${candidates.size} available tile matrix sets.")
+        return candidates.firstOrNull()
+            ?: invalid("The capabilities document contains no tile matrix sets.")
     }
 
     private fun invalid(message: String): Nothing =

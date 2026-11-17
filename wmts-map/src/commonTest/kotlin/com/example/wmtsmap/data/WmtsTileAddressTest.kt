@@ -70,7 +70,7 @@ class WmtsTileAddressTest {
     }
 
     @Test
-    fun `resolves KVP parameters and refuses ambiguous selection`() {
+    fun `resolves KVP parameters and rejects unknown layers`() {
         val url = WmtsTileAddress.resolve(
             capabilitiesUrl = "https://example.test/wmts",
             capabilities = capabilities,
@@ -84,8 +84,24 @@ class WmtsTileAddressTest {
 
         assertEquals("https://example.test/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=base&STYLE=default&FORMAT=image%2Fpng&TILEMATRIXSET=world&TILEMATRIX=L0&TILEROW=5&TILECOL=3", url)
         assertFailsWith<WmtsMapException> {
-            WmtsTileAddress.selectLayer(capabilities.copy(layers = listOf(layer, layer.copy(identifier = "second"))), null)
+            WmtsTileAddress.selectLayer(capabilities.copy(layers = listOf(layer)), "missing")
         }
+    }
+
+    @Test
+    fun `defaults to first layer and first compatible matrix set`() {
+        val firstLayer = layer.copy(tileMatrixSetLinks = listOf("world", "other"))
+        val secondLayer = layer.copy(identifier = "second")
+        val capabilities = capabilities.copy(
+            layers = listOf(firstLayer, secondLayer),
+            tileMatrixSets = listOf(matrixSet, matrixSet.copy(identifier = "other")),
+        )
+
+        assertEquals("base", WmtsTileAddress.selectLayer(capabilities, null).identifier)
+        assertEquals(
+            "world",
+            WmtsTileAddress.selectMatrixSet(capabilities, firstLayer, null).identifier,
+        )
     }
 
     private companion object {

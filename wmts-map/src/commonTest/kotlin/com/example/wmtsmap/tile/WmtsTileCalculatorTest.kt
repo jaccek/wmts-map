@@ -3,11 +3,48 @@ package com.example.wmtsmap.tile
 import com.example.wmtsmap.model.ProjectedCoordinate
 import com.example.wmtsmap.model.WmtsTileMatrix
 import com.example.wmtsmap.model.WmtsTileMatrixSet
+import com.example.wmtsmap.projection.WmtsProjection
 import kotlin.math.sqrt
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class WmtsTileCalculatorTest {
+    @Test
+    fun `derives center from the first matrix extent`() {
+        val matrixSet = WmtsTileMatrixSet(
+            identifier = "custom",
+            supportedCrs = "EPSG:3857",
+            tileMatrices = listOf(
+                WmtsTileMatrix(
+                    identifier = "first",
+                    scaleDenominator = 10_000.0,
+                    topLeftCorner = ProjectedCoordinate(-100.0, 200.0),
+                    tileWidth = 10,
+                    tileHeight = 20,
+                    matrixWidth = 2,
+                    matrixHeight = 4,
+                ),
+                WmtsTileMatrix(
+                    identifier = "later",
+                    scaleDenominator = 1_000.0,
+                    topLeftCorner = ProjectedCoordinate(0.0, 0.0),
+                    tileWidth = 256,
+                    tileHeight = 256,
+                    matrixWidth = 1,
+                    matrixHeight = 1,
+                ),
+            ),
+        )
+
+        val projectedCenter = WmtsProjection.forward(
+            WmtsTileCalculator.coverageCenter(matrixSet),
+            matrixSet.supportedCrs,
+        )
+
+        assertEquals(-72.0, projectedCenter.easting, 1e-8)
+        assertEquals(88.0, projectedCenter.northing, 1e-8)
+    }
+
     @Test
     fun `calculates tile index and bounds using actual dimensions and nonzero origin`() {
         val matrix = WmtsTileMatrix(

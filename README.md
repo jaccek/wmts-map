@@ -77,9 +77,10 @@ WmtsMap(
 )
 ```
 
-If a service has multiple layers or matrix sets, configure them explicitly or
-select them after reading the capabilities from the controller state. A single
-available layer/matrix set is selected automatically. A layer's default style
+If not configured, the first layer and its first compatible tile matrix set in
+the capabilities are selected. When `initialPosition` is omitted, the map
+centers on the extent midpoint of the first matrix in that set. Explicit layer,
+matrix-set, or position values override these defaults. A layer's default style
 is used when available.
 
 `WmtsMapConfig` also accepts request headers, connect/request/socket timeout
